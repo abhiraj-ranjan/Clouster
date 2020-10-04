@@ -172,6 +172,3 @@ class call:
         
     def markattendence_class(self, adm_no='', stu_id='', session='', period='', subject=''):
         self.session.post(self.mbaseurl+'app121/student/online_class/ajax', data={"stu_id":stu_id, "adm_no":adm_no, "session":session, "period":period, "subject":subject, "ajax":1, "action":"save_attendance"})
-
-
-#sess = call(username='abh133')
