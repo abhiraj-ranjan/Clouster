@@ -6,7 +6,7 @@ Enterprise Resource Planning desktop app is specifically built for Vishwa Bharti
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
-run ['main.py'](main.py) to execute program.
+run ['erp_main.py'](main.py) to execute program.
 
 ### Prerequisites
 
@@ -56,7 +56,7 @@ test run app :
 ## Authors
 
 * **Abhiraj Ranjan** - *Initial work* - [mail](mailto:abhirajranjan456@gmail.com)
-* **Roshta kaushik** - *sql contributer*
+* **Roshita kaushik** - *sql contributer*
 
 ## License
 
