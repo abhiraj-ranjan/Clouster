@@ -75,6 +75,8 @@ class TranslucentWidget(QtWidgets.QWidget):
     def _onclose(self):
         self.SIGNALS.CLOSE.emit()
 
+        
+
 class rightMenuSignals(QtCore.QObject):
     CLOSE = QtCore.pyqtSignal()
 
@@ -204,6 +206,8 @@ class rightMenu(QtWidgets.QWidget):
             ___qlistwidgetitem.setText(u"".join(homework[i]))
             
         self.listWidget_2.setSortingEnabled(__sortingEnabled)
+
+        
 
 class leftMenuClassSignals(QtCore.QObject):
     # SIGNALS
@@ -412,7 +416,9 @@ class leftMenuClass(QtWidgets.QWidget):
     def changeView(self):
         wid = self.sender()
         if wid.objectName() == 'links':
-            self.signals.OlinkTab.emit()  
+            self.signals.OlinkTab.emit()
+
+            
 
 class hoverMenuClassSignals(QtCore.QObject):
     EnterEventTriggered = QtCore.pyqtSignal()
@@ -477,6 +483,8 @@ class hoverMenuClass(QtWidgets.QLabel):
         #self.minanimation.setEasingCurve(QtCore.QEasingCurve.InOutQuart)
         #self.minanimation.start()
 
+
+
 class pandasModel(QtCore.QAbstractTableModel):
         def __init__(self, data):
             QtCore.QAbstractTableModel.__init__(self)
@@ -498,6 +506,8 @@ class pandasModel(QtCore.QAbstractTableModel):
             if orientation == Qt.Horizontal and role == Qt.DisplayRole:
                 return self._data.columns[col]
             return None   
+
+
 
 class WorkerSignals(QtCore.QObject):
     result   = QtCore.pyqtSignal(object)
@@ -524,6 +534,8 @@ class Worker(QtCore.QRunnable):
         finally:
             self.signals.finished.emit()
 
+            
+
 class Window(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
@@ -538,7 +550,6 @@ class Window(QtWidgets.QWidget):
 
     def declareVar(self):
         global homework
-        self.defaultsize          = self.geometry()
         self._toggleMax           = 0
         self._hideMenu            = True
         self._popframe            = None
@@ -568,6 +579,7 @@ class Window(QtWidgets.QWidget):
 
     def testclicked(self):
         webbrowser.open('https://vbpsdelf.accevate.com/app121/student/google-form-test/?id='+self.APIcall.id)
+
         
     def notepadTextChangedFunc(self):
         wid = self.sender()
@@ -584,6 +596,7 @@ class Window(QtWidgets.QWidget):
         if wid.objectName() == 'textEdit_4':
             self.ui.textEdit_2.setText(notepadText)
             self.ui.textEdit_3.setText(notepadText)
+
             
     def leftMenuLinkup(self):
         wid = self.sender()
@@ -599,52 +612,182 @@ class Window(QtWidgets.QWidget):
             
         x, y, w, h = self.ui.stackedWidget.x(), self.ui.stackedWidget.y(), self.ui.stackedWidget.width(), self.ui.stackedWidget.height()
         self.ui.stackedWidget.setGeometry(QtCore.QRect(9+self.ui.leftMenu.width(), 0, w, h))
+
             
     def submitForm(self):
         if self.ui.lineEdit.text():
             if self.ui.lineEdit_4.text():
-                if self.ui.lineEdit.text() == 'root' and self.ui.lineEdit_4.text() == 'toor':
-                    print('hre')
-                    self.testlogindb()
+                if os.path.exists(os.path.join(os.getcwd(), 'database.db')):                                  
+                    self.classicLogin()                    
                 else:
-                    self._onpopup()
-                    self.afterLogin()
-                
+                    conn = sqlite3.Connection('database.db')
+                    df = pd.DataFrame(columns = ['primaryID','username', 'password', 'id', 'name', 'Class', 'dob', 'doa', 'permaadd', 'corradd', 'cat', 'religion', 'fname', 'mname', 'mob', 'cast', 'nationality'])
+                    df = df.append({'primaryID':'0', 'username':'root', 'password':'toor', 'id':'2757', 'name':'Abhiraj Ranjan', 'Class':'XII-A', 'dob':'23 June, 2004', 'doa':'28 Feb 2012', 'permaadd':'...', 'corradd':'...', 'cat':"Humanity", 'religion':'Humanity', 'fname':'...', 'mname':'...', 'mob':'100', 'cast':'Humanity', 'nationality':'INDIAN'}, ignore_index = True)
+                    df.to_sql('userData', conn)
+                    conn.commit()
+                    conn.close()
+                    self.classicLogin()
+                    
+
+    def classicLogin(self):
+        if self.ui.lineEdit.text() == 'root' and self.ui.lineEdit_4.text() == 'toor':
+            self.testlogindb()
+        else:
+            self._onpopup()
+            self.afterLogin()
+            
+                    
     def API(self, usrname='',passwrd=''):
         APIcall = call(username=usrname, password=passwrd)
         return APIcall
+    
 
     def initUI(self):
-        self.ui.stackedWidget.setCurrentWidget(self.ui.loginTab)
+        prestrtn = self.autoLogin()
+        if prestrtn:
+            result, username, pasword = prestrtn
+        
         self.ui.leftMenu = leftMenuClass(self.ui.frame_9)
+        
         self.ui.leftMenu.signals.onLeaveEvent.connect(self.leftMenuLeaveFunc)
         self.ui.leftMenu.move(-70, 0)
         self.ui.leftMenu.resize(70, self.height()-42-18)
 
-        self.hoverMenu = hoverMenuClass(self.ui.frame_9)
+        self.hoverMenu   = hoverMenuClass(self.ui.frame_9)
+        
         self.hoverMenu.resize(9, self.height())
         self.hoverMenu.Signal.EnterEventTriggered.connect(self.hoverMenuEnterFunc)
         self.hoverMenu.move(0, 0)
 
         self.ui.label_credits.setText('')
 
-        self.threadpool = QtCore.QThreadPool()
+        self.threadpool  = QtCore.QThreadPool()
         self.linkup()
+        self.ui.stackedWidget.setCurrentWidget(self.ui.loginTab)
+        if prestrtn:
+            self.afterLoginResults(result, popupclose=False, username=username, password=pasword)
+        else:
+            self.afterLoginError(autoLoginconn=True)
+            #self.ui.stackedWidget.setCurrentWidget(self.ui.loginTab)
+            
+    def autoLogin(self):
 
-    def afterLoginResults(self, api):
+        if os.path.exists(os.path.join(os.getcwd(), 'database.db')) :
+        
+            conn = sqlite3.Connection('database.db')
+            df   = pd.read_sql('select * from userData', conn)
+            conn.close()
+            if df.shape[0] == 2 :
+                if 1 in df.primaryID.to_dict():
+                    username, pasword = df.username[1], df.password[1]
+                    print(username, pasword)
+                    #self._onpopup()
+                    try:
+                        result = self.API(usrname=username,passwrd=pasword)
+                    except:
+                        print('error while going online')
+                        
+                        #self.ui.stackedWidget.setCurrentWidget(self.ui.loginTab)
+                        return False
+                    else:
+                        return result, username, pasword
+        
+    def afterLoginResults(self, api, popupclose=True, username=False, password=False):
+        print('result')
         self.APIcall = api
+        id = self.APIcall.id
+
+        a            = self.APIcall.Assig
+        df3          = pd.DataFrame(columns=['subject', 'topic', 'date', 'link'])
+        for i in a:
+            subject  = i[0] if i[0] else None
+            topic    = i[1] if i[1] else None
+            date     = i[2] if i[2] else None
+            link     = i[3] if i[3] else None
+            df3      = df3.append({'subject':subject, 'topic':topic, 'date':date,'link':link}, ignore_index=True)
+
+
+        data         = self.APIcall.personalData
+        zoomlinks    = self.APIcall.zoomlinks
+
+        conn         = sqlite3.Connection('database.db')
+        df           = pd.DataFrame(columns = ['primaryID','username', 'password', 'id', 'name', 'Class', 'dob', 'doa', 'permaadd', 'corradd', 'cat', 'religion', 'fname', 'mname', 'mob', 'cast', 'nationality'])
+        df           = df.append({'primaryID':'0', 'username':'root', 'password':'toor', 'id':'2757', 'name':'Abhiraj Ranjan', 'Class':'XII-A', 'dob':'23 June, 2004', 'doa':'28 Feb, 2012', 'permaadd':'...', 'corradd':'...', 'cat':"Humanity", 'religion':'Humanity', 'fname':'...', 'mname':'...', 'mob':'100', 'cast':'Humanity', 'nationality':'INDIAN'}, ignore_index = True)
+        
+        
+        if username:
+            df       = df.append({'primaryID':'1', 'username':username, 'password':password, 'id':id, 'name':data['name'], 'Class':data['class'], 'dob':data['Date Of Birth'], 'doa':data['Date Of Admission'], 'permaadd':data['Permanent Address'], 'corradd':data["Correspondance Address"], 'cat':data["Category"], 'religion':data["Religion"], 'fname':data["Father's Name"], 'mname':data["Mother's Name"], 'mob':data['Mobile NO.'], 'cast':data["Cast"], 'nationality':data["Nationality"]}, ignore_index = True)
+        else:
+            df       = df.append({'primaryID':'1', 'username':self.ui.lineEdit.text(), 'password':self.ui.lineEdit_4.text(), 'id':id, 'name':data['name'], 'Class':data['class'], 'dob':data['Date Of Birth'], 'doa':data['Date Of Admission'], 'permaadd':data['Permanent Address'], 'corradd':data["Correspondance Address"], 'cat':data["Category"], 'religion':data["Religion"], 'fname':data["Father's Name"], 'mname':data["Mother's Name"], 'mob':data['Mobile NO.'], 'cast':data["Cast"], 'nationality':data["Nationality"]}, ignore_index = True)
+        
+        try:
+            conn.execute('drop table userData')
+            conn.execute('drop table zoomData')
+            conn.execute('drop table assigData')
+        except:
+            pass
+
+        conn.commit()
+        df.to_sql('userData', conn)
+        zoomlinks.to_sql('zoomData', conn)
+        df3.to_sql('assigData', conn)
+        conn.commit()
+        conn.close()
+        
         self.noticetableWidget()
         self.assigtableWidget()
         self.infoedior()
         self.ui.leftMenu.tests.clicked.connect(self.testclicked)
         self.ui.stackedWidget.setCurrentWidget(self.ui.userTab)
-        self._popframe.close()
-        self._popflag = False
+        if popupclose:
+            self._popframe.close()
+            self._popflag = False
 
 
-    def afterLoginError(self):
-        print('Error detected while reteriving data \n due to fees probably')
+    def afterLoginError(self, autoLoginconn=False):
+        print("error goin' online, loading from database stored")
+        conn = sqlite3.Connection('database.db')
+        df   = pd.read_sql('select * from userData', conn)
+        conn.close()
         
+        if 1 in df.primaryID.to_dict():
+            if autoLoginconn:
+                self.testnoticetableWidget()
+                self.testassigtableWidget()
+                self.dbinfeditor()
+
+                self.ui.stackedWidget.setCurrentWidget(self.ui.userTab)
+                self.ui.label_11.setPixmap(QPixmap(os.path.abspath('icons/user.jpeg')))
+
+
+            elif self.ui.lineEdit.text() == df.username[1] :
+                if self.ui.lineEdit_4.text() == df.password[1]:
+                    self.testnoticetableWidget()
+                    self.testassigtableWidget()
+                    self.dbinfeditor()
+
+                    self.ui.stackedWidget.setCurrentWidget(self.ui.userTab)
+                    self.ui.label_11.setPixmap(QPixmap(os.path.abspath('icons/user.jpeg')))
+                    self._popframe.close()
+                    self._popflag = False
+                else:
+                    print('incorrect set of username and password')
+                    if not autoLoginconn :
+                        self._popframe.close()
+                        self._popflag = False
+                        
+            else:
+                print('incorrect set of username and password')
+                if not autoLoginconn :
+                    self._popframe.close()
+                    self._popflag = False
+        else:
+            print('cannot connect to database or probaby this problem can be raised by fees issues, net reset and various other reasons')
+            self.ui.stackedWidget.setCurrentWidget(self.ui.loginTab)
+            if not autoLoginconn:
+                self._popframe.close()
+                self._popflag = False
+
         
     def afterLogin(self):
         
@@ -721,6 +864,7 @@ class Window(QtWidgets.QWidget):
         self.animationgrp.addAnimation(self.minanimation)
         self.animationgrp.start()
         self._hideMenus = True
+        
     
     def noticetableWidget(self):
         a = self.APIcall.zoomlinks
@@ -732,11 +876,13 @@ class Window(QtWidgets.QWidget):
         self.ui.View.customContextMenuRequested.connect(self.ViewRightClick)
         
         self.ui.View.resizeColumnsToContents()
+        
 
     def ViewRightClick(self, point):
         index = self.ui.View.indexAt(point)
         if index.column() == 2:
             webbrowser.open(index.sibling(index.row(), index.column()).data())
+            
 
     def assigtableWidget(self):
         a = self.APIcall.Assig
@@ -757,11 +903,13 @@ class Window(QtWidgets.QWidget):
         self.ui.tableView.customContextMenuRequested.connect(self.tableViewRightClick)
         
         self.ui.tableView.resizeColumnsToContents()
+        
 
     def tableViewRightClick(self, point):
         index = self.ui.tableView.indexAt(point)
         if index.column() == 3:
             webbrowser.open(index.sibling(index.row(), index.column()).data())
+
 
     def infoedior(self):
         data = self.APIcall.personalData
@@ -779,31 +927,40 @@ class Window(QtWidgets.QWidget):
         self.ui._studentname.setText(data['name'])
         self.ui.label_credits.setText('Logged in as {0}'.format(data["name"]))
         self.ui._class.setText(data['class'])
-        self.ui.label_11.setPixmap(QPixmap(os.path.abspath('./icons/user.jpeg')))
+        self.ui.label_11.setPixmap(QPixmap(os.path.abspath('icons/user.jpeg')))
         self.ui.label_11.setScaledContents(True)
 
         self.toottipAddon(data)
+        
     
     def toottipAddon(self, data):
         self.ui._permaadd.setToolTip(data['Permanent Address'])
         self.ui._corradd.setToolTip(data["Correspondance Address"])
         self.ui.leftMenu.external_links.setToolTip('online classes')
+        
 
     def logout(self):
-        ##
+        self.ui.lineEdit.setText('')
+        self.ui.lineEdit_4.setText('')
+        conn = sqlite3.Connection('database.db')
+        df = pd.read_sql('select * from userData', conn)
+        if df.shape[0] == 2 :
+            df = df.drop(index=1)
+        conn.execute('drop table userData')
+        conn.commit()
+        df.to_sql('userData', conn)
+        conn.commit()
+        conn.close()
         self.ui.stackedWidget.setCurrentWidget(self.ui.loginTab)
       
-    def toggleMax(self):
-        if self._toggleMax == 0:
-            
-            self.defs = self.geometry()
-            self.showFullScreen()
-            if self.isFullScreen():
-                self._toggleMax = 1
 
-        if self._toggleMax == 1:
+    def toggleMax(self):
+        if self.isFullScreen():
             self.showNormal()
-                
+            
+        else:
+            self.showFullScreen()    
+
             """
             global screenavailGeo
             print(screenavailGeo)
@@ -831,15 +988,20 @@ class Window(QtWidgets.QWidget):
         if self._popflag:
             self._popframe.move(0, 0)
             self._popframe.resize(self.ui.frame_9.width(), self.ui.frame_9.height())
+
+        self.ui.leftMenu.resize(70, self.height()-42-18)
+        self.hoverMenu.resize(9, self.height())
+        
             
         if self._rightMenuDrivenTrue:
             self._rightMenu.move(self.ui.frame_9.width() - 210, 0)
             self._rightMenu.resize(210, self.ui.frame_9.height())
             
+            
     def _rightMenuDrive(self):
         if self._rightMenuDrivenTrue : return
         global frameHeight, frameWidth, screenavailGeo, screenSize
-        frameWidth = self.ui.frame_9.width()
+        frameWidth  = self.ui.frame_9.width()
         frameHeight = self.ui.frame_9.height()
         self._rightMenuDrivenTrue = True
         self._rightMenu = rightMenu(self.ui.frame_9)
@@ -859,15 +1021,81 @@ class Window(QtWidgets.QWidget):
         
         self.prop.start()
         self.prop.finished.connect(self.closeanimComp)
+        
 
     def testlogindb(self):
-        #self.ui.gettestlogindb()
-        print('here')
+        self.testnoticetableWidget()
+        self.testassigtableWidget()
+        self.gettestlogindb()
+        
         self.ui.stackedWidget.setCurrentWidget(self.ui.userTab)
 
     def gettestlogindb(self):
-        self.sqllib.execute('select * from ')
+        conn = sqlite3.Connection('database.db')
+        df = pd.read_sql_query('select * from userData', conn)
+        conn.close()
+        self.testinfoeditor(df, 0)
 
+    def testinfoeditor(self, df, i):
+        self.ui._dob.setText(df.dob[i])
+        self.ui._doa.setText(df.doa[i])
+        self.ui._fathername.setText(df.fname[i])
+        self.ui._mothername.setText(df.mname[i])
+        self.ui._permaadd.setText(df.permaadd[i][:12]+'...')
+        self.ui._corradd.setText(df.corradd[i][:12]+'...')
+        self.ui._cast.setText(df.cast[i])
+        self.ui._cat.setText(df.cat[i])
+        self.ui._nationality.setText(df.nationality[i])
+        self.ui._phoneno.setText(df.mob[i])
+        self.ui._religion.setText(df.religion[i])
+        self.ui._studentname.setText(df.name[i])
+        self.ui.label_credits.setText('Logged in as {0}'.format(df.name[i]))
+        self.ui._class.setText(df.Class[i])
+        self.ui.label_11.setPixmap(QPixmap(os.path.abspath('./icons/default.png')))
+        self.ui.label_11.setScaledContents(True)
+        
+        self.testooltipAddon(df)
+
+    def dbinfeditor(self):
+        conn = sqlite3.Connection('database.db')
+        df = pd.read_sql_query('select * from userData', conn)
+        conn.close()
+        self.testinfoeditor(df, 1)
+
+        
+    def testooltipAddon(self, df):
+        self.ui._permaadd.setToolTip(df.permaadd[0])
+        self.ui._corradd.setToolTip(df.corradd[0])
+        self.ui.leftMenu.external_links.setToolTip('online classes')
+
+    def testnoticetableWidget(self):
+        conn  = sqlite3.Connection('database.db')
+        
+        df    = pd.read_sql('select * from zoomData',conn)
+        conn.close()
+        model = pandasModel(df)
+    
+        self.ui.View.setModel(model)
+
+        self.ui.View.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.View.customContextMenuRequested.connect(self.ViewRightClick)
+        
+        self.ui.View.resizeColumnsToContents()
+
+    def testassigtableWidget(self):
+        conn  = sqlite3.Connection('database.db')
+        df    = pd.read_sql('select * from assigData', conn)
+        conn.close()
+        model = pandasModel(pd.DataFrame(df))
+        
+        self.ui.tableView.setModel(model)
+
+        self.ui.tableView.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.tableView.customContextMenuRequested.connect(self.tableViewRightClick)
+        
+        self.ui.tableView.resizeColumnsToContents()
+        
+        
     def closeanimComp(self):
         self._rightMenu.setGeometry(QtCore.QRect(self.ui.frame_9.width() - 210, 0, 210, self.ui.frame_9.height()))
 
@@ -889,7 +1117,7 @@ class Window(QtWidgets.QWidget):
         self._popframe.move(0, 0)
         self._popframe.resize(self.ui.frame_9.width(), self.ui.frame_9.height())
         self._popframe.SIGNALS.CLOSE.connect(self._closepopup)
-        self._popflag = True
+        self._popflag  = True
         self._popframe.show()
         
     def _closepopup(self):
