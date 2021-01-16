@@ -2,11 +2,21 @@
 
 Enterprise Resource Planning desktop app is specifically built for Vishwa Bharti Public School (Dwarka) aims to revamp UI to modern designs. 
 
+![Clouster loading screen](/ss/clouster-screen.png)
+
+
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 run ['erp_main.py'](main.py) to execute program.
+
+## ScreenShots
+![Clouster main login screen](/ss/clousterlogin1.png)
+![Clouster main login screen-semi filled](/ss/clouster-login.png)
+![Clouster main login screen on hover button](/ss/clousterlogin2.png)
+![Clouster home screen after login](/ss/clouster-homescreen.png)
+![Clouster assignment tab](/ss/Clouster-assig.png)
 
 ### Prerequisites
 
